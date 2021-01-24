@@ -27,7 +27,8 @@
 
     <script>
 
-        var xValue = 0;
+        var waterxValue = 0;
+        var soundxValue = 0;
         var waterYValue = 0;
         var soundYValue = 0;
 
@@ -62,22 +63,26 @@
 
 
             function addWaterData(value) {
+                if(waterxValue > 100) {
+                    waterDataPoints.shift();
+                }
+                waterDataPoints.push({x: waterxValue, y: parseInt(value)});
+                waterxValue++;
 
-                        waterDataPoints.push({x: xValue, y: parseInt(value)});
-                        xValue++;
-                        waterYValue = parseInt(value[1]);
                 waterChart.render();
             }
             function addSoundData(value) {
+                if(soundxValue > 100) {
+                    soundDataPoints.shift();
+                }
+                soundDataPoints.push({x: soundxValue, y: parseInt(value)});
+                soundxValue++;
 
-                soundDataPoints.push({x: xValue, y: parseInt(value)});
-                xValue++;
-                soundYValue = parseInt(value[1]);
                 soundChart.render();
             }
 
             function updateData() {
-                if (waterYValue != 0) {
+                if (soundYValue != 0) {
                 addWaterData(waterYValue);
                 addSoundData(soundYValue);
                 }
@@ -88,7 +93,7 @@
     </script>
 
     <script>
-        var url = "ws://192.168.0.165:1337/";
+        var url = "ws://192.168.0.165:443/";
 
 
         // This is called when the page finishes loading
