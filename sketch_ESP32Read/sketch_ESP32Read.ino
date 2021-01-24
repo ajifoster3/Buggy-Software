@@ -1,7 +1,8 @@
 #define RXD2 16
 #define TXD2 17
 #include <WiFi.h>
-
+#include <WebSocketsServer.h>
+#include <ESPAsyncWebServer.h>
 
 bool stringComplete = false;
 void serialEvent();
@@ -14,8 +15,11 @@ String soundValue;
 const char* ssid = "BTWholeHome-8H6";
 const char* password = "HqwUCtPTG4x7";
 
+
+
 // Set web server port number to 80
-WiFiServer server(80);
+AsyncWebServer server(80);
+WebSocketsServer webSocket = WebSocketsServer(1337);
 
 // Variable to store the HTTP request
 String header;
@@ -29,6 +33,67 @@ const long timeoutTime = 2000;
 
 
 String splitString(String string, char deliniator, int index);
+
+
+void onWebSocketEvent(uint8_t client_num,
+                      WStype_t type,
+                      uint8_t * payload,
+                      size_t length) {
+
+  // Figure out the type of WebSocket event
+  switch(type) {
+
+    // Client has disconnected
+    case WStype_DISCONNECTED:
+      Serial.printf("[%u] Disconnected!\n", client_num);
+      break;
+
+    // New client has connected
+    case WStype_CONNECTED:
+      {
+        IPAddress ip = webSocket.remoteIP(client_num);
+        Serial.printf("[%u] Connection from ", client_num);
+        Serial.println(ip.toString());
+      }
+      break;
+
+    // Handle text messages from client
+    case WStype_TEXT:
+
+      // Print out raw message
+      Serial.printf("[%u] Received text: %s\n", client_num, payload);
+
+      if ( strcmp((char *)payload, "forward") == 0 ) {
+        Serial2.println("forward");
+      }else if ( strcmp((char *)payload, "backward") == 0 ) {
+        Serial2.println("backward");
+      } else if ( strcmp((char *)payload, "left") == 0 ) {
+        Serial2.println("left");
+      } else if ( strcmp((char *)payload, "right") == 0 ) {
+        Serial2.println("right");
+      } else if ( strcmp((char *)payload, "stop") == 0 ) {
+        Serial2.println("stop");
+      } else if ( strcmp((char *)payload, "toggleWaterSensor") == 0 ) {
+        Serial2.println("toggle");
+      }else if ( strcmp((char *)payload, "data") == 0 ) {
+        webSocket.sendTXT(client_num, "Water: " + waterValue + "\n Sound: " + soundValue);
+      }else {
+        Serial.println("[%u] Message not recognized");
+      }
+      break;
+
+    // For everything else: do nothing
+    case WStype_BIN:
+    case WStype_ERROR:
+    case WStype_FRAGMENT_TEXT_START:
+    case WStype_FRAGMENT_BIN_START:
+    case WStype_FRAGMENT:
+    case WStype_FRAGMENT_FIN:
+    default:
+      break;
+  }
+}
+
 
 
 void setup() {
@@ -50,141 +115,20 @@ void setup() {
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
   server.begin();
+  webSocket.begin();
+  webSocket.onEvent(onWebSocketEvent);
 }
 
 void loop() {
  
-  WiFiClient client = server.available();   // Listen for incoming clients
-
-
-  if (Serial2.available()) {
+//  WiFiClient client = server.available();   // Listen for incoming clients
+if (Serial2.available()) {
    serialValue = Serial2.readStringUntil('\n');
    waterValue = splitString(serialValue, ',', 1);
    soundValue = splitString(serialValue, ',', 0);
   }
-
-
-  if (client) {                             // If a new client connects,
-  currentTime = millis();
-    previousTime = currentTime;
-    Serial.println("New Client.");          // print a message out in the serial port
-    String currentLine = "";   // make a String to hold incoming data from the client
-     header = ".";
-    while (client.connected() && currentTime - previousTime <= timeoutTime) {  // loop while the client's connected
-      currentTime = millis();
-      if (client.available()) {             // if there's bytes to read from the client,
-        char c = client.read();             // read a byte, then
-        Serial.write(c);                    // print it out the serial monitor
-        header += c;
-        if (c == '\n') {                    // if the byte is a newline character
-          // if the current line is blank, you got two newline characters in a row.
-          // that's the end of the client HTTP request, so send a response:
-
-          if (currentLine.length() == 0) {
-
-            // ------- Get handlers -------
-            if (header.indexOf("GET /water") > 0) {
-              client.println("HTTP/1.1 200 OK");
-              client.println("Content-type:text/html");
-              client.println("Connection: close");
-              client.println();
-              client.println(waterValue);
-              break;
-            } else if (header.indexOf("GET /sound") > 0) {
-              client.println("HTTP/1.1 200 OK");
-              client.println("Content-type:text/html");
-              client.println("Connection: close");
-              client.println();
-              client.println(soundValue);
-              break;
-            }else if (header.indexOf("GET /forward") > 0) {
-              client.println("HTTP/1.1 200 OK");
-              client.println("Content-type:text/html");
-              client.println("Connection: close");
-              client.println();
-              client.println("Move forward");
-              Serial.println("forward")
-              break;
-            }else if (header.indexOf("GET /backward") > 0) {
-              client.println("HTTP/1.1 200 OK");
-              client.println("Content-type:text/html");
-              client.println("Connection: close");
-              client.println();
-              client.println("Move back");
-              Serial.println("backward")
-              break;
-            }else if (header.indexOf("GET /left") > 0) {
-              client.println("HTTP/1.1 200 OK");
-              client.println("Content-type:text/html");
-              client.println("Connection: close");
-              client.println();
-              client.println("Move right");
-              break;
-            }else if (header.indexOf("GET /right") > 0) {
-              client.println("HTTP/1.1 200 OK");
-              client.println("Content-type:text/html");
-              client.println("Connection: close");
-              client.println();
-              client.println("Move right");
-              break;
-            }else if (header.indexOf("GET /stop") > 0) {
-              client.println("HTTP/1.1 200 OK");
-              client.println("Content-type:text/html");
-              client.println("Connection: close");
-              client.println();
-              client.println(soundValue);
-              break;
-            }else if (header.indexOf("GET /toggleWaterSensor") > 0) {
-              client.println("HTTP/1.1 200 OK");
-              client.println("Content-type:text/html");
-              client.println("Connection: close");
-              client.println();
-              client.println(soundValue);
-              break;
-            }
-            else {
-              client.println("HTTP/1.1 200 OK");
-              client.println("Content-type:text/html");
-              client.println("Connection: close");
-              client.println();
-
-              // Display the HTML web page
-              client.println("<!DOCTYPE html><html>");
-              client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-              client.println("<link rel=\"icon\" href=\"data:,\">");
-              // CSS to style the on/off buttons
-              // Feel free to change the background-color and font-size attributes to fit your preferences
-              client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
-              client.println(".button { background-color: #4CAF50; border: none; color: white; padding: 16px 40px;");
-              client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
-              client.println(".button2 {background-color: #555555;}</style></head>");
-
-              // Web Page Heading
-              client.println("<h1>ESP32 Web Server</h1>");
-
-              client.println("</body></html>");
-
-              // The HTTP response ends with another blank line
-              client.println();
-
-              // Break out of the while loop
-              break;
-            }
-          } else { // if you got a newline, then clear currentLine
-            currentLine = "";
-          }
-        } else if (c != '\r') {  // if you got anything else but a carriage return character,
-          currentLine += c;      // add it to the end of the currentLine
-        }
-      }
-    }
-    // Clear the header variable
-    header = "";
-    // Close the connection
-    client.stop();
-    Serial.println("Client disconnected.");
-    Serial.println("");
-  }
+  webSocket.loop();
+  
 }
 
 
