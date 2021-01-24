@@ -68,8 +68,6 @@ void onWebSocketEvent(uint8_t client_num,
         Serial2.println("stop");
       } else if ( strcmp((char *)payload, "toggleWaterSensor") == 0 ) {
         Serial2.println("toggle");
-      }else if ( strcmp((char *)payload, "data") == 0 ) {
-        webSocket.sendTXT(client_num, "Water: " + waterValue + "\n Sound: " + soundValue);
       }else {
         Serial.println("[%u] Message not recognized");
       }

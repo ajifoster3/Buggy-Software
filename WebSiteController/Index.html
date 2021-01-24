@@ -113,7 +113,6 @@
             websocket.onclose = function(evt) { onClose(evt) };
             websocket.onmessage = function(evt) { onMessage(evt) };
             websocket.onerror = function(evt) { onError(evt) };
-            setTimeout(doPoll,5000);
         }
 
         // Called when a WebSocket connection is established with the server
@@ -160,10 +159,6 @@
             });
         });
 
-        function doPoll(){
-            Send("data");
-            setTimeout(doPoll,20);
-        }
 
 
     </script>
