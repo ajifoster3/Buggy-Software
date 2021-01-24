@@ -9,7 +9,8 @@ void serialEvent();
 String serialValue;
 String waterValue;
 String soundValue;
-
+std::vector<int> clients;
+int clientCount = 0;
 
 // Replace with your network credentials
 const char* ssid = "BTWholeHome-8H6";
@@ -19,17 +20,7 @@ const char* password = "HqwUCtPTG4x7";
 
 // Set web server port number to 80
 AsyncWebServer server(80);
-WebSocketsServer webSocket = WebSocketsServer(1337);
-
-// Variable to store the HTTP request
-String header;
-
-// Current time
-unsigned long currentTime = millis();
-// Previous time
-unsigned long previousTime = 0;
-// Define timeout time in milliseconds (example: 2000ms = 2s)
-const long timeoutTime = 2000;
+WebSocketsServer webSocket = WebSocketsServer(443);
 
 
 String splitString(String string, char deliniator, int index);
@@ -46,6 +37,7 @@ void onWebSocketEvent(uint8_t client_num,
     // Client has disconnected
     case WStype_DISCONNECTED:
       Serial.printf("[%u] Disconnected!\n", client_num);
+      clients.erase(std::remove(clients.begin(), clients.end(), 8), clients.end());
       break;
 
     // New client has connected
@@ -54,6 +46,7 @@ void onWebSocketEvent(uint8_t client_num,
         IPAddress ip = webSocket.remoteIP(client_num);
         Serial.printf("[%u] Connection from ", client_num);
         Serial.println(ip.toString());
+        clients.push_back(client_num);
       }
       break;
 
@@ -120,13 +113,9 @@ void setup() {
 }
 
 void loop() {
- 
-//  WiFiClient client = server.available();   // Listen for incoming clients
-if (Serial2.available()) {
-   serialValue = Serial2.readStringUntil('\n');
-   waterValue = splitString(serialValue, ',', 1);
-   soundValue = splitString(serialValue, ',', 0);
-  }
+ if (Serial2.available())
+        serialEvent();
+   
   webSocket.loop();
   
 }
@@ -147,4 +136,16 @@ String splitString(String data, char separator, int index)
         }
     }
     return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
+}
+
+void serialEvent() {
+   serialValue = Serial2.readStringUntil('\n');
+   waterValue = splitString(serialValue, ',', 1);
+   soundValue = splitString(serialValue, ',', 0);
+
+   
+    for (int n : clients) {
+        webSocket.sendTXT(n, "Water: " + waterValue + "\n Sound: " + soundValue);
+    }
+  
 }

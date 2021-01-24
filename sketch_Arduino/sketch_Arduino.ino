@@ -1,32 +1,33 @@
-#define waterSensorPin A0 // Attach Water sensor to Arduino Digital Pin 8
+#define waterSensorPin A8 
 #define soundSensorPin A15
+#define servoMotorPin  10
 #include "WaterSensor.h"
 #include "SoundSensor.h"
+#include "MotorControl.h"
 #include <Servo.h>
 
-Servo servo1;
 
-float val = 0;
-int count = 0;
 boolean isServoExtended = 0;
-void ExtendServo();
-void RetractServo();
-void ToggleServo();
-
-
-
+Servo servo;
+MotorControl mc = MotorControl(12, 3, 13, 11);
 WaterSensor ws = WaterSensor(waterSensorPin);
 SoundSensor ss = SoundSensor(soundSensorPin);
 
+void ToggleServo();
+void ExtendServo();
+void RetractServo();
+
+
+
 void setup() {
   Serial.begin(9600);
-  servo1.attach(10);
+  
   //Setup Channel A
   pinMode(12, OUTPUT); //Initiates Motor Channel A pin
 
   //Setup Channel B
   pinMode(13, OUTPUT); //Initiates Motor Channel A pin
-
+  servo.attach(servoMotorPin);
 
 }
 
@@ -39,52 +40,22 @@ void loop() {
   if (Serial.available()) {
     String value = "." + Serial.readStringUntil('\n');
     if (value.indexOf("forward") > 0) {
-      digitalWrite(12, LOW); //Establishes forward direction of Channel A
-      analogWrite(3, 255);   //Spins the motor on Channel A at full speed
-
-      
-      digitalWrite(13, HIGH);  //Establishes backward direction of Channel B
-      analogWrite(11, 225);    //Spins the motor on Channel B at half speed
+        mc.Forward();
     } else if (value.indexOf("backward") > 0) {
-     digitalWrite(12, HIGH); //Establishes forward direction of Channel A
-      analogWrite(3, 255);   //Spins the motor on Channel A at full speed
-
-      
-      digitalWrite(13, LOW);  //Establishes backward direction of Channel B
-      analogWrite(11, 225);    //Spins the motor on Channel B at half speed
+        mc.Backward();
     }else if (value.indexOf("left") > 0) {
-    digitalWrite(12, LOW); //Establishes forward direction of Channel A
-      analogWrite(3, 255);   //Spins the motor on Channel A at full speed
-      digitalWrite(13, HIGH);  //Establishes backward direction of Channel B
-      analogWrite(11, 50);    //Spins the motor on Channel B at half speed
-
+        mc.Left();
     }else if (value.indexOf("right") > 0) {
-      digitalWrite(12, LOW); //Establishes forward direction of Channel A
-      analogWrite(3, 50);   //Spins the motor on Channel A at full speed
-
-      //Motor B backward @ half speed
-      digitalWrite(13, HIGH);  //Establishes backward direction of Channel B
-      analogWrite(11, 225);    //Spins the motor on Channel B at half speed
-
-    }
-    else if (value.indexOf("stop") > 0) {
-    digitalWrite(12, LOW); //Establishes forward direction of Channel A
-      analogWrite(3, 0);   //Spins the motor on Channel A at full speed
-
-      //Motor B backward @ half speed
-      digitalWrite(13, HIGH);  //Establishes backward direction of Channel B
-      analogWrite(11, 0);    //Spins the motor on Channel B at half speed
-    }
-    else if (value.indexOf("toggle") > 0) {
+        mc.Right();
+    }else if (value.indexOf("stop") > 0) {
+        mc.Stop();
+    }else if (value.indexOf("toggle") > 0) {
       ToggleServo();
     }
   }
 
   delay(500);
 }
-
-
-
 
 void ToggleServo() {
   if (isServoExtended) {
@@ -94,10 +65,10 @@ void ToggleServo() {
   }
 }
 void ExtendServo() {
-  servo1.write(150);
+  servo.write(150);
   isServoExtended = 1;
 };
 void RetractServo() {
-  servo1.write(0);
+  servo.write(0);
   isServoExtended = 0;
 };
