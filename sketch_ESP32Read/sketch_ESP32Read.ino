@@ -8,8 +8,8 @@ void serialEvent();
 int clientCount = 0;
 
 // Replace with your network credentials
-const char* ssid = "BTWholeHome-8H6";
-const char* password = "HqwUCtPTG4x7";
+const char* ssid = "***********";
+const char* password = "***********";
 std::vector<int> clients;
 
 
