@@ -96,9 +96,9 @@
         var url = "ws://192.168.0.165:443/";
 
 
-        // This is called when the page finishes loading
+
         function init() {
-            // Connect to WebSocket server
+            $("#connection").css("background-color","Red");
             wsConnect(url);
         }
 
@@ -118,28 +118,41 @@
         // Called when a WebSocket connection is established with the server
         function onOpen(evt) {
             console.log("Connected");
+            $("#connection").css("background-color","Green");
         }
 
         // Called when the WebSocket connection is closed
         function onClose(evt) {
             console.log("Disconnected");
+            $("#connection").css("background-color","Red");
             setTimeout(function() { wsConnect(url) }, 2000);
         }
 
+        var serverTimeoutCount;
+
         // Called when a message is received from the server
         function onMessage(evt) {
+            clearTimeout(serverTimeoutCount);
             console.log("Received: " + evt.data);
             if(evt.data.includes("Water")){
+                $("#connection").css("background-color","Green");
                 var dataArray = evt.data.split(" ");
                 var water = parseInt(dataArray[1]);
                 var sound = parseInt(dataArray[3]);
                 waterYValue = water;
                 soundYValue = sound;
+                serverTimeoutCount = setTimeout(serverTimeout, 3000)
             }
+        }
+        function serverTimeout(){
+            $("#connection").css("background-color","Red");
+            waterYValue = 0;
+            soundYValue = 0;
         }
 
         // Called when a WebSocket error occurs
         function onError(evt) {
+            $("#connection").css("background-color","Red");
             console.log("ERROR: " + evt.data);
         }
 
@@ -167,7 +180,7 @@
 </head>
 <body>
 <div class="grid-container">
-    <div class="grid-item"></div>
+    <div class="grid-item"><button id="connection" class="button" >Connected</button></div>
     <div class="grid-item"><button id="forward" class="button" value="forward">Forward</button></div>
     <div class="grid-item"><button id="Toggle" class="button" value="toggleWaterSensor">Toggle Water Sensor</button></div>
     <div class="grid-item"><button id="left" class="button" value="left">Left</button></div>

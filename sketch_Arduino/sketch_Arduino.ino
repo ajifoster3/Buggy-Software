@@ -22,11 +22,8 @@ void RetractServo();
 void setup() {
   Serial.begin(9600);
   
-  //Setup Channel A
-  pinMode(12, OUTPUT); //Initiates Motor Channel A pin
-
-  //Setup Channel B
-  pinMode(13, OUTPUT); //Initiates Motor Channel A pin
+ 
+  
   servo.attach(servoMotorPin);
 
 }

@@ -2,6 +2,8 @@
 #include "MotorControl.h"
 
 MotorControl::MotorControl(uint8_t leftDirection, uint8_t leftSpeed, uint8_t rightDirection, uint8_t rightSpeed){
+  pinMode(LeftDirection, OUTPUT); 
+  pinMode(RightDirection, OUTPUT);
   LeftDirection = leftDirection;
   LeftSpeed = leftSpeed;
   RightDirection = rightDirection;
