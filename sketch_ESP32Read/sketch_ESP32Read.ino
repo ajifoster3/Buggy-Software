@@ -5,21 +5,19 @@
 
 void serialEvent();
 
-int clientCount = 0;
-
 // Replace with your network credentials
 const char* ssid = "***********";
 const char* password = "***********";
+
+//List of Client connected to WebSocketServer
 std::vector<int> clients;
-
-
-
 WebSocketsServer webSocket = WebSocketsServer(443);
 
 
 String splitString(String string, char deliniator, int index);
 
 void setup() {
+  //Start Serial for UART communication and for printing respectivly
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
   Serial.begin(115200);
 
@@ -36,6 +34,7 @@ void setup() {
   Serial.println("WiFi connected.");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
+  //Begin WebsocketServer
   webSocket.begin();
   webSocket.onEvent(onWebSocketEvent);
 }
@@ -48,7 +47,7 @@ void loop() {
 }
 
 
-
+//Splits a string into substrings 
 String splitString(String data, char separator, int index)
 {
     int found = 0;
@@ -65,6 +64,7 @@ String splitString(String data, char separator, int index)
     return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 
+//send incoming serial sensor data to all Websocket Cliets
 void serialEvent() {
    auto serialValue = Serial2.readStringUntil('\n');
    auto waterValue = splitString(serialValue, ',', 1);
@@ -77,6 +77,7 @@ void serialEvent() {
   
 }
 
+//Handle WebSocket Events
 void onWebSocketEvent(uint8_t clientNum,
                       WStype_t type,
                       uint8_t * payload,
